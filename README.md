@@ -3,7 +3,7 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/ACShadowsFix/total.svg)](https://github.com/Lyall/ACShadowsFix/releases)
 
-**ACShadowsFix** is an ASI plugin Assassin's Creed Shadows that can:
+**ACShadowsFix** is an ASI plugin for Assassin's Creed Shadows that can:
 - Skip intro videos.
 - Extend in-game FOV slider.
 - Disable framerate cap in cutscenes/FMVs/menus.
