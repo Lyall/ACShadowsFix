@@ -7,7 +7,7 @@
 - Skip intro videos.
 - Extend in-game FOV slider.
 - Disable framerate cap in cutscenes/FMVs/menus.
-- Dynamic cloth physics framerate.
+- Enable dynamic cloth physics framerate.
 - Allow cutscene frame generation.
 - Disable pillarboxing/letterboxing in cutscenes.
 
