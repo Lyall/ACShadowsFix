@@ -45,7 +45,7 @@ jobs:
         
     - name: Create Directory Structure
       run: |
-        mkdir ./zip/runtime/media
+        mkdir ./zip/
 
     - name: Prepare Release Files
       run: |
