@@ -22,7 +22,7 @@
 - Open **`ACShadowsFix.ini`** to adjust settings.
 
 ## Screenshots
-|  |
+| ![ezgif-7bc58187476248](https://github.com/user-attachments/assets/ea03950e-6a38-4253-8acd-4ba66c91374f) |
 |:--:|
 | Cutscene |
 
