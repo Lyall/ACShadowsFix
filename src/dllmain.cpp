@@ -30,7 +30,8 @@ std::string sExeName;
 bool bIntroSkip;
 bool bExtendedFOV;
 bool bDisableFPSLimit;
-bool bDynamicClothPhysics;
+bool bAdjustClothPhysics;
+float fClothPhysicsFramerate;
 bool bCutsceneFrameGen;
 bool bDisablePillarboxing;
 
@@ -112,15 +113,20 @@ void Configuration()
     inipp::get_value(ini.sections["Intro Skip"], "Enabled", bIntroSkip);
     inipp::get_value(ini.sections["Extended FOV Slider"], "Enabled", bExtendedFOV);
     inipp::get_value(ini.sections["Disable Framerate Limit"], "Enabled", bDisableFPSLimit);
-    inipp::get_value(ini.sections["Cloth Physics Framerate"], "Dynamic", bDynamicClothPhysics);
+    inipp::get_value(ini.sections["Cloth Physics Framerate"], "Enabled", bAdjustClothPhysics);
+    inipp::get_value(ini.sections["Cloth Physics Framerate"], "Framerate", fClothPhysicsFramerate);
     inipp::get_value(ini.sections["Cutscene Frame Generation"], "Enabled", bCutsceneFrameGen);
     inipp::get_value(ini.sections["Disable Pillarboxing"], "Enabled", bDisablePillarboxing);
+
+    // Clamp settings
+    fClothPhysicsFramerate = std::clamp(fClothPhysicsFramerate, 0.00f, 500.00f);
 
     // Log ini parse
     spdlog_confparse(bIntroSkip);
     spdlog_confparse(bExtendedFOV);
     spdlog_confparse(bDisableFPSLimit);
-    spdlog_confparse(bDynamicClothPhysics);
+    spdlog_confparse(bAdjustClothPhysics);
+    spdlog_confparse(fClothPhysicsFramerate);
     spdlog_confparse(bCutsceneFrameGen);
     spdlog_confparse(bDisablePillarboxing);
 
@@ -142,7 +148,7 @@ void IntroSkip()
 
                     if (!bIntroSkipped) {
                         char* vidName = *(char**)ctx.rdx;
-                        ctx.rflags |= (1ULL << 6); // Set ZF
+                        ctx.rflags |= (1ULL << 6); // Set ZF to skip playback
                         
                         // The ubisoft logo is last so we know the intro skip is done when that plays
                         if (strncmp(vidName, "UbisoftLogo.webm", sizeof("UbisoftLogo.webm") - 1) == 0) {
@@ -237,7 +243,7 @@ void Framerate()
         }
     }
 
-    if (bDynamicClothPhysics)
+    if (bAdjustClothPhysics)
     {
         // Cloth physics
         std::uint8_t* ClothPhysicsScanResult = Memory::PatternScan(exeModule, "4C ?? ?? ?? 49 ?? ?? ?? 45 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 83 ?? ?? 49 ?? ?? 01");
@@ -248,11 +254,17 @@ void Framerate()
                 [](SafetyHookContext& ctx) {
                     if (!ctx.rcx) return;
 
-                    // By default the game appears to use 60fps cloth physics during gameplay and 30fps cloth physics during cutscenes.
+                    // By default the game appears to use 60fps cloth physics during gameplay and 30fps cloth physics during cutscenes
 
-                    // Use current frametime for cloth physics instead of fixed 0.01666/0.03333 values.
-                    if (uintptr_t pFramerate = *reinterpret_cast<uintptr_t*>(ctx.rcx + 0x70))
-                        ctx.xmm0.f32[0] = *reinterpret_cast<float*>(pFramerate + 0x78); // Current frametime
+                    if (fClothPhysicsFramerate == 0.00f) {
+                        // Use current frametime for cloth physics instead of fixed 0.01666/0.03333 values
+                        if (uintptr_t pFramerate = *reinterpret_cast<uintptr_t*>(ctx.rcx + 0x70))
+                            ctx.xmm0.f32[0] = *reinterpret_cast<float*>(pFramerate + 0x78); // Current frametime
+                    }
+                    else {
+                        // Set user defined cloth physics framerate
+                        ctx.xmm0.f32[0] = 1.00f / fClothPhysicsFramerate;
+                    }
                 });
         }
         else {
