@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "ACShadowsFix";
-std::string sFixVersion = "0.0.1";
+std::string sFixVersion = "0.0.2";
 std::filesystem::path sFixPath;
 
 // Ini
@@ -33,7 +33,8 @@ bool bDisableFPSLimit;
 bool bAdjustClothPhysics;
 float fClothPhysicsFramerate;
 bool bCutsceneFrameGen;
-bool bDisablePillarboxing;
+bool bDisableCutscenePillarboxing;
+bool bDisablePhotoModePillarboxing;
 
 // Variables
 int iCurrentResX;
@@ -116,7 +117,8 @@ void Configuration()
     inipp::get_value(ini.sections["Cloth Physics Framerate"], "Enabled", bAdjustClothPhysics);
     inipp::get_value(ini.sections["Cloth Physics Framerate"], "Framerate", fClothPhysicsFramerate);
     inipp::get_value(ini.sections["Cutscene Frame Generation"], "Enabled", bCutsceneFrameGen);
-    inipp::get_value(ini.sections["Disable Pillarboxing"], "Enabled", bDisablePillarboxing);
+    inipp::get_value(ini.sections["Disable Pillarboxing"], "Cutscenes", bDisableCutscenePillarboxing);
+    inipp::get_value(ini.sections["Disable Pillarboxing"], "PhotoMode", bDisablePhotoModePillarboxing);
 
     // Clamp settings
     fClothPhysicsFramerate = std::clamp(fClothPhysicsFramerate, 0.00f, 500.00f);
@@ -128,7 +130,8 @@ void Configuration()
     spdlog_confparse(bAdjustClothPhysics);
     spdlog_confparse(fClothPhysicsFramerate);
     spdlog_confparse(bCutsceneFrameGen);
-    spdlog_confparse(bDisablePillarboxing);
+    spdlog_confparse(bDisableCutscenePillarboxing);
+    spdlog_confparse(bDisablePhotoModePillarboxing);
 
     spdlog::info("----------");
 }
@@ -212,7 +215,7 @@ void FOV()
 
 void Pillarboxing()
 {
-    if (bDisablePillarboxing) 
+    if (bDisableCutscenePillarboxing) 
     {
         // Cutscene pillarboxing
         std::uint8_t* CutscenePillarboxingScanResult = Memory::PatternScan(exeModule,"84 C0 74 ?? C5 FA ?? ?? ?? ?? C5 FA ?? ?? ?? ?? C5 FA ?? ?? C5 ?? 57 ?? C5 FA ?? ??");
@@ -265,7 +268,7 @@ void Framerate()
                         // Set user defined cloth physics framerate
                         ctx.xmm0.f32[0] = 1.00f / fClothPhysicsFramerate;
                     }
-                });
+                });             
         }
         else {
             spdlog::error("Framerate: Cloth Physics: Pattern scan failed.");
@@ -287,6 +290,32 @@ void Framerate()
     }
 }
 
+void Misc()
+{
+    if (bDisablePhotoModePillarboxing) 
+    {
+        // Photo mode pillarboxing
+        std::uint8_t* PhotoModePillarboxingScanResult = Memory::PatternScan(exeModule, "C4 ?? ?? ?? ?? 89 ?? ?? 73 ?? EB ?? C5 FA ?? ?? ?? ?? ?? ?? C5 ?? 59 ?? ?? ?? ??");
+        std::uint8_t* PhotoModeOutputScanResult = Memory::PatternScan(exeModule,"C4 ?? ?? ?? ?? FF ?? 83 ?? ?? 89 ?? ?? EB ?? 8B ?? ?? C4 ?? ?? ?? ??");
+        if (PhotoModePillarboxingScanResult && PhotoModeOutputScanResult) {
+            spdlog::info("Photo Mode: Pillarboxing: Address is {:s}+{:x}", sExeName.c_str(), PhotoModePillarboxingScanResult - (std::uint8_t*)exeModule);
+            static SafetyHookMid PhotoModePillarboxingMidHook{};
+            PhotoModePillarboxingMidHook = safetyhook::create_mid(PhotoModePillarboxingScanResult,
+                [](SafetyHookContext& ctx) {
+                    ctx.xmm1.f32[0] = 1920.00f;
+                }); 
+            
+            spdlog::info("Photo Mode: Output: Address is {:s}+{:x}", sExeName.c_str(), PhotoModeOutputScanResult - (std::uint8_t*)exeModule);
+            Memory::PatchBytes(PhotoModeOutputScanResult + 0x04, "\xD2", 1); // vcvttss2si rdx,xmm0 -> vcvttss2si rdx,xmm2 for >16:9
+            Memory::PatchBytes(PhotoModeOutputScanResult + 0x23, "\xC1", 1); // vcvttss2si r8,xmm0  -> vcvttss2si rdx,xmm1 for <16:9
+            spdlog::info("Photo Mode: Output: Patched instructions.");
+        }
+        else {
+            spdlog::error("Photo Mode: Pattern scan(s) failed.");
+        }
+    }
+}
+
 DWORD __stdcall Main(void*)
 {
     Logging();
@@ -295,6 +324,7 @@ DWORD __stdcall Main(void*)
     FOV();
     Pillarboxing();
     Framerate();
+    Misc();
 
     return true;
 }
