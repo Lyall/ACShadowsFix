@@ -23,7 +23,7 @@
 - Open **`ACShadowsFix.ini`** to adjust settings.
 
 ## SpecialK
-- [SpecialK](https://www.special-k.info/) - The latest nightly builds of SpecialK include some adapted features from ACShadowsFix. If you run into any issues with this fix, then it may be worth trying SpecialK instead.
+- [SpecialK](https://www.special-k.info/) - The latest builds of SpecialK include some adapted features from ACShadowsFix. If you run into any issues with this fix, then it may be worth trying SpecialK instead.
 
 ## Screenshots
 | ![ezgif-7bc58187476248](https://github.com/user-attachments/assets/ea03950e-6a38-4253-8acd-4ba66c91374f) |
