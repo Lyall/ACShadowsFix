@@ -39,28 +39,38 @@ namespace Memory
         return bytes;
     }
 
-    std::uint8_t* PatternScan(void* module, const char* signature) 
+    std::uint8_t* PatternScan(void* module, const char* signature)
     {
         auto dosHeader = (PIMAGE_DOS_HEADER)module;
         auto ntHeaders = (PIMAGE_NT_HEADERS)((std::uint8_t*)module + dosHeader->e_lfanew);
 
-        auto sizeOfImage = ntHeaders->OptionalHeader.SizeOfImage;
         auto patternBytes = pattern_to_byte(signature);
-        auto scanBytes = reinterpret_cast<std::uint8_t*>(module);
-
         auto s = patternBytes.size();
         auto d = patternBytes.data();
 
-        for (auto i = 0ul; i < sizeOfImage - s; ++i) {
-            bool found = true;
-            for (auto j = 0ul; j < s; ++j) {
-                if (scanBytes[i + j] != d[j] && d[j] != -1) {
-                    found = false;
-                    break;
+        auto section = IMAGE_FIRST_SECTION(ntHeaders);
+        for (unsigned i = 0; i < ntHeaders->FileHeader.NumberOfSections; ++i, ++section) {
+            DWORD characteristics = section->Characteristics;
+
+            bool isReadable = (characteristics & IMAGE_SCN_MEM_READ);
+            bool isExecutable = (characteristics & IMAGE_SCN_MEM_EXECUTE);
+
+            if (!(isReadable || isExecutable))
+                continue;
+
+            auto sectionStart = (std::uint8_t*)module + section->VirtualAddress;
+            auto sectionSize = section->SizeOfRawData;
+
+            for (std::size_t i = 0; i < sectionSize - s; ++i) {
+                bool found = true;
+                for (std::size_t j = 0; j < s; ++j) {
+                    if (d[j] != -1 && sectionStart[i + j] != d[j]) {
+                        found = false;
+                        break;
+                    }
                 }
-            }
-            if (found) {
-                return &scanBytes[i];
+                if (found)
+                    return &sectionStart[i];
             }
         }
 
