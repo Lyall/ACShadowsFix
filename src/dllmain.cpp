@@ -249,19 +249,19 @@ void Framerate()
     if (bAdjustClothPhysics)
     {
         // Cloth physics
-        std::uint8_t* ClothPhysicsScanResult = Memory::PatternScan(exeModule, "4C ?? ?? ?? 49 ?? ?? ?? 45 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? ?? ?? ?? ?? 83 ?? ?? 49 ?? ?? 01");
+        std::uint8_t* ClothPhysicsScanResult = Memory::PatternScan(exeModule, "E8 ?? ?? ?? ?? 4C 8B ?? ?? ?? 49 8B ?? ?? 48 8B ?? ?? 48 8B ?? ?? 80 ?? ?? ?? ?? ?? 00 0F 84 ?? ?? ?? ??");
         if (ClothPhysicsScanResult) {
             spdlog::info("Framerate: Cloth Physics: Address is {:s}+{:x}", sExeName.c_str(), ClothPhysicsScanResult - (std::uint8_t*)exeModule);
             static SafetyHookMid ClothPhysicsMidHook{};
-            ClothPhysicsMidHook = safetyhook::create_mid(ClothPhysicsScanResult,
+            ClothPhysicsMidHook = safetyhook::create_mid(Memory::GetAbsolute(Memory::GetAbsolute(ClothPhysicsScanResult + 0x1) + 0x1) + 0x15E, // TODO: This is awful but pattern scanning for this region of memory causes a crash. Why?
                 [](SafetyHookContext& ctx) {
-                    if (!ctx.rcx + 0x70) return;
+                    if (!ctx.rdx + 0x70) return;
 
                     // By default the game appears to use 60fps cloth physics during gameplay and 30fps cloth physics during cutscenes
 
                     if (fClothPhysicsFramerate == 0.00f) {
                         // Use current frametime for cloth physics instead of fixed 0.01666/0.03333 values
-                        if (uintptr_t pFramerate = *reinterpret_cast<uintptr_t*>(ctx.rcx + 0x70))
+                        if (uintptr_t pFramerate = *reinterpret_cast<uintptr_t*>(ctx.rdx + 0x70))
                             ctx.xmm0.f32[0] = *reinterpret_cast<float*>(pFramerate + 0x78); // Current frametime
                     }
                     else {
