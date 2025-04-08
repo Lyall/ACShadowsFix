@@ -40,6 +40,7 @@ bool bDisablePhotoModePillarboxing;
 int iCurrentResX;
 int iCurrentResY;
 bool bIntroSkipped = false;
+std::uint8_t* CurrentFrametimeAddr = nullptr;
 
 void Logging()
 {
@@ -248,6 +249,20 @@ void Framerate()
 
     if (bAdjustClothPhysics)
     {
+        if (fClothPhysicsFramerate == 0.00f) 
+        {
+            // Current frametime
+            std::uint8_t* CurrentFrametimeScanResult = Memory::PatternScan(exeModule, "C5 FA ?? ?? ?? ?? ?? ?? C5 ?? ?? ?? C5 FA ?? ?? ?? ?? ?? ?? C5 F2 ?? ?? ?? ?? ?? ?? C5 F2 ?? ?? C5 FA ?? ?? ?? ?? ?? ?? 8A ??");
+            if (CurrentFrametimeScanResult) {
+                spdlog::info("Framerate: Current Frametime: Address is {:s}+{:x}", sExeName.c_str(), CurrentFrametimeScanResult - (std::uint8_t*)exeModule);
+                CurrentFrametimeAddr = Memory::GetAbsolute(CurrentFrametimeScanResult + 0x4); 
+                spdlog::info("Framerate: Current Frametime: Frametime address is {:s}+{:x}", sExeName.c_str(), CurrentFrametimeAddr - (std::uint8_t*)exeModule);         
+            }
+            else {
+                spdlog::error("Framerate: Current Frametime: Pattern scan failed.");
+            }
+        }
+
         // Cloth physics
         std::uint8_t* ClothPhysicsScanResult = Memory::PatternScan(exeModule, "4C 8B ?? ?? 49 8B ?? ?? 45 0F ?? ?? ?? ?? ?? ?? 45 0F ?? ?? ?? ?? ?? ?? 41 ?? ?? ?? 49 ?? ?? 01");
         if (ClothPhysicsScanResult) {
@@ -257,10 +272,9 @@ void Framerate()
                 [](SafetyHookContext& ctx) {
                     // By default the game appears to use 60fps cloth physics during gameplay and 30fps cloth physics during cutscenes
 
-                    if (ctx.rdx + 0x70 && fClothPhysicsFramerate == 0.00f) {
+                    if (CurrentFrametimeAddr && fClothPhysicsFramerate == 0.00f) {
                         // Use current frametime for cloth physics instead of fixed 0.01666/0.03333 values
-                        if (uintptr_t pFramerate = *reinterpret_cast<uintptr_t*>(ctx.rdx + 0x70))
-                            ctx.xmm0.f32[0] = *reinterpret_cast<float*>(pFramerate + 0x78); // Current frametime
+                        ctx.xmm0.f32[0] = *reinterpret_cast<float*>(CurrentFrametimeAddr);
                     }
                     else {
                         // Set user defined cloth physics framerate
