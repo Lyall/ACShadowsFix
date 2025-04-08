@@ -7,9 +7,9 @@
 - Skip intro videos.
 - Extend in-game FOV slider.
 - Disable framerate cap in cutscenes/FMVs/menus.
-- Enable dynamic cloth physics framerate.
+- Adjust cloth physics framerate.
 - Allow cutscene frame generation.
-- Disable pillarboxing/letterboxing in cutscenes.
+- Disable pillarboxing/letterboxing in cutscenes/photo mode.
 
 ## Installation  
 - Download the latest release from [here](https://github.com/Lyall/ACShadowsFix/releases). 
@@ -21,6 +21,9 @@
 
 ## Configuration
 - Open **`ACShadowsFix.ini`** to adjust settings.
+
+## SpecialK
+- [SpecialK](https://www.special-k.info/) - The latest nightly builds of SpecialK include some adapted features from ACShadowsFix. If you run into any issues with this fix, then it may be worth trying SpecialK instead.
 
 ## Screenshots
 | ![ezgif-7bc58187476248](https://github.com/user-attachments/assets/ea03950e-6a38-4253-8acd-4ba66c91374f) |
