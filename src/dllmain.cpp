@@ -255,7 +255,7 @@ void Framerate()
             static SafetyHookMid ClothPhysicsMidHook{};
             ClothPhysicsMidHook = safetyhook::create_mid(ClothPhysicsScanResult,
                 [](SafetyHookContext& ctx) {
-                    if (!ctx.rcx) return;
+                    if (!ctx.rcx + 0x70) return;
 
                     // By default the game appears to use 60fps cloth physics during gameplay and 30fps cloth physics during cutscenes
 
