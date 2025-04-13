@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "ACShadowsFix";
-std::string sFixVersion = "0.0.3";
+std::string sFixVersion = "0.0.4";
 std::filesystem::path sFixPath;
 
 // Ini
@@ -35,6 +35,7 @@ float fClothPhysicsFramerate;
 bool bCutsceneFrameGen;
 bool bDisableCutscenePillarboxing;
 bool bDisablePhotoModePillarboxing;
+bool bCenteredCamera;
 
 // Variables
 int iCurrentResX;
@@ -120,6 +121,7 @@ void Configuration()
     inipp::get_value(ini.sections["Cutscene Frame Generation"], "Enabled", bCutsceneFrameGen);
     inipp::get_value(ini.sections["Disable Pillarboxing"], "Cutscenes", bDisableCutscenePillarboxing);
     inipp::get_value(ini.sections["Disable Pillarboxing"], "PhotoMode", bDisablePhotoModePillarboxing);
+    inipp::get_value(ini.sections["Centered Camera"], "Enabled", bCenteredCamera);
 
     // Clamp settings
     fClothPhysicsFramerate = std::clamp(fClothPhysicsFramerate, 0.00f, 500.00f);
@@ -133,6 +135,7 @@ void Configuration()
     spdlog_confparse(bCutsceneFrameGen);
     spdlog_confparse(bDisableCutscenePillarboxing);
     spdlog_confparse(bDisablePhotoModePillarboxing);
+    spdlog_confparse(bCenteredCamera);
 
     spdlog::info("----------");
 }
@@ -324,6 +327,20 @@ void Misc()
         }
         else {
             spdlog::error("Photo Mode: Pattern scan(s) failed.");
+        }
+    }
+
+    if (bCenteredCamera)
+    {
+        // Center gameplay camera
+        std::uint8_t* CenteredCameraScanResult = Memory::PatternScan(exeModule,"C4 ?? ?? ?? ?? C4 ?? ?? ?? ?? ?? C4 ?? ?? ?? ?? ?? 41 ?? ?? ?? 00 75 ?? C5 ?? ?? ?? ?? ?? ?? ?? EB ??");
+        if (CenteredCameraScanResult) {
+            spdlog::info("Centered Camera: Address is {:s}+{:x}", sExeName.c_str(), CenteredCameraScanResult - (std::uint8_t*)exeModule);
+            Memory::PatchBytes(CenteredCameraScanResult, "\x0F\x57\xE4\x90\x90", 5);
+            spdlog::info("Centered Camera: Patched instruction.");
+        }
+        else {
+            spdlog::error("Centered Camera: Pattern scan failed.");
         }
     }
 }
