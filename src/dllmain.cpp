@@ -13,7 +13,7 @@ HMODULE thisModule;
 
 // Fix details
 std::string sFixName = "ACShadowsFix";
-std::string sFixVersion = "0.0.4";
+std::string sFixVersion = "0.0.5";
 std::filesystem::path sFixPath;
 
 // Ini
@@ -293,7 +293,7 @@ void Framerate()
     if (bCutsceneFrameGen)
     {
         // Cutscene frame generation
-        std::uint8_t* CutsceneFrameGenerationScanResult = Memory::PatternScan(exeModule,"80 ?? ?? 00 0F 84 ?? ?? ?? ?? 31 ?? 20 ?? 48 8B ?? 45 ?? ?? 80 ?? ?? ?? ?? ?? 00");
+        std::uint8_t* CutsceneFrameGenerationScanResult = Memory::PatternScan(exeModule,"80 ?? ?? 00 0F 84 ?? ?? ?? ?? 31 ?? 40 ?? ?? 48 8B ?? 45 ?? ?? 80 ?? ?? ?? ?? ?? 00");
         if (CutsceneFrameGenerationScanResult) {
             spdlog::info("Framerate: Cutscene Frame Generation: Address is {:s}+{:x}", sExeName.c_str(), CutsceneFrameGenerationScanResult - (std::uint8_t*)exeModule);
             Memory::PatchBytes(CutsceneFrameGenerationScanResult + 0x3, "\xFF\x0F\x85", 3);
